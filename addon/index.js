@@ -73,26 +73,31 @@ export function wrap(input) {
   Object.keys(defaultData.actions).forEach(actionName => {
     const originalAction = defaultData.actions[actionName];
     defaultData.actions[actionName] = function(...args) {
-      originalAction.apply(new Proxy(this, handler), args);
+      return originalAction.apply(new Proxy(this, handler), args);
     };
   });
 
   Object.keys(input.watch).forEach(propName => {
+    const originalObserver = input.watch[propName];
     // eslint-disable-next-line ember/no-observers
-    defaultData["_ob_" + propName] = observer(propName, input.watch[propName]);
+    defaultData["_ob_" + propName] = observer(propName, function(...args) {
+      return originalObserver.apply(new Proxy(this, handler), args);
+    });
   });
   Object.keys(input.computed).forEach(propName => {
     const cp = input.computed[propName];
-    const isCpFunction = typeof cp === 'function';
+    const isCpFunction = typeof cp === "function";
     const descr = {
-        get: isCpFunction ? cp : cp.get,
-        set: isCpFunction ? function() {
+      get: isCpFunction ? cp : cp.get,
+      set: isCpFunction
+        ? function() {
             throw new Error(`Unable to rewrite computed property ${propName}!`);
-        } : cp.set,
-        enumerable: false,
-        configurable: true
+          }
+        : cp.set,
+      enumerable: false,
+      configurable: true
     };
-    Object.defineProperty(defaultData, propName, descr)
+    Object.defineProperty(defaultData, propName, descr);
     //defaultData[propName] = computed(input.computed[propName]).volatile();
   });
   return Component.extend(defaultData);
