@@ -1,4 +1,4 @@
-import { computed, observer, set } from "@ember/object";
+import { observer, set } from "@ember/object";
 import Component from "@ember/component";
 const noop = function() {};
 
@@ -18,7 +18,7 @@ const handler = {
   }
 };
 
-export default function wrap(input) {
+export function wrap(input) {
   const defaultData = {
     beforeCreate: input.beforeCreate || noop,
     beforeUpdate: input.beforeUpdate || noop,
@@ -82,7 +82,18 @@ export default function wrap(input) {
     defaultData["_ob_" + propName] = observer(propName, input.watch[propName]);
   });
   Object.keys(input.computed).forEach(propName => {
-    defaultData[propName] = computed(input.computed[propName]).volatile();
+    const cp = input.computed[propName];
+    const isCpFunction = typeof cp === 'function';
+    const descr = {
+        get: isCpFunction ? cp : cp.get,
+        set: isCpFunction ? function() {
+            throw new Error(`Unable to rewrite computed property ${propName}!`);
+        } : cp.set,
+        enumerable: false,
+        configurable: true
+    };
+    Object.defineProperty(defaultData, propName, descr)
+    //defaultData[propName] = computed(input.computed[propName]).volatile();
   });
   return Component.extend(defaultData);
 }

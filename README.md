@@ -40,7 +40,7 @@ export default wrap({
   data() {
     return {
 	  age: 0
-	}
+    }
   },
   watch: {
     age() {
@@ -54,7 +54,7 @@ export default wrap({
   },
   actions: {
     click() {
-      this.name++;
+      this.age++;
     }
   }
 });
