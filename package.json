@@ -1,6 +1,6 @@
 {
   "name": "ember-vue-components",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Vue 2.x component API for Ember.js",
   "keywords": [
     "ember-addon"
