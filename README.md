@@ -1,8 +1,8 @@
 ember-vue-components
 ==============================================================================
 
-[Short description of the addon.]
-
+This addon provide "Vue" 2.x component api for Ember.
+May be useful in migration purposes or if you from Vue world and wanna try Ember.
 
 Compatibility
 ------------------------------------------------------------------------------
@@ -23,8 +23,43 @@ ember install ember-vue-components
 Usage
 ------------------------------------------------------------------------------
 
-[Longer description of how to use the addon in apps.]
 
+
+```js
+// app/components/vue-component.js
+import { wrap } from 'ember-vue-components';
+import hbs from 'htmlbars-inline-precompile';
+
+export default wrap({
+  template: hbs`
+    <div>
+      My age is {{this.age}}, full age is: {{this.fullAge}} days.
+      <button {{action "click"}}>Increment</button>
+    </div>
+  `,
+  data() {
+    return {
+	  age: 0
+	}
+  },
+  watch: {
+    age() {
+      console.log('age changed');
+    }
+  },
+  computed: {
+    fullAge() {
+      return this.age * 356;
+    }
+  },
+  actions: {
+    click() {
+      this.name++;
+    }
+  }
+});
+
+```
 
 Contributing
 ------------------------------------------------------------------------------
