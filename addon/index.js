@@ -4,6 +4,12 @@ const noop = function() {};
 
 const handler = {
   get(target, name) {
+    if (name === '$content') {
+      return target;
+    }
+    if (name.startsWith('_')) {
+      return target[name];
+    }
     if (typeof target[name] === "object" && target[name] !== null) {
       return new Proxy(target[name], handler);
     }
@@ -17,6 +23,21 @@ const handler = {
     return name in target;
   }
 };
+
+function proxify(originalFn) {
+  return function(...args) {
+    return originalFn.apply(new Proxy(this, handler), args);
+  };
+}
+
+const API_PROPS = [
+  'beforeCreate', 'created',
+  'beforeMounted' , 'mounted',
+  'beforeUpdate', 'updated',
+  'beforeDestroy',  'destroyed',
+  'data', 'methods', 'actions',
+  'watch', 'computed', 'template'
+];
 
 export function wrap(input) {
   const defaultData = {
@@ -44,6 +65,9 @@ export function wrap(input) {
       } else if (typeof input.data === "function") {
         this.dataKeys = input.data();
       }
+      Object.keys(this.actions).forEach((action)=>{
+        this[action] = this.actions[action].bind(this);
+      });
       this.setProperties(this.dataKeys);
       this.created();
       this.beforeMounted();
@@ -72,17 +96,13 @@ export function wrap(input) {
 
   Object.keys(defaultData.actions).forEach(actionName => {
     const originalAction = defaultData.actions[actionName];
-    defaultData.actions[actionName] = function(...args) {
-      return originalAction.apply(new Proxy(this, handler), args);
-    };
+    defaultData.actions[actionName] = proxify(originalAction);
   });
 
   Object.keys(input.watch).forEach(propName => {
     const originalObserver = input.watch[propName];
     // eslint-disable-next-line ember/no-observers
-    defaultData["_ob_" + propName] = observer(propName, function(...args) {
-      return originalObserver.apply(new Proxy(this, handler), args);
-    });
+    defaultData["_ob_" + propName] = observer(propName, proxify(originalObserver));
   });
   Object.keys(input.computed).forEach(propName => {
     const cp = input.computed[propName];
@@ -98,7 +118,14 @@ export function wrap(input) {
       configurable: true
     };
     Object.defineProperty(defaultData, propName, descr);
-    //defaultData[propName] = computed(input.computed[propName]).volatile();
   });
-  return Component.extend(defaultData);
+
+  const fns = {};
+  Object.keys(input).forEach((key)=>{
+    if (!API_PROPS.includes(key)) {
+      fns[key] = input[key];
+    }
+  });
+
+  return Component.extend(defaultData, fns);
 }
