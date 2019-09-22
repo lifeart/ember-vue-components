@@ -4,10 +4,10 @@ const noop = function() {};
 
 const handler = {
   get(target, name) {
-    if (name === '$content') {
+    if (name === "$content") {
       return target;
     }
-    if (name.startsWith('_')) {
+    if (name.startsWith("_")) {
       return target[name];
     }
     if (typeof target[name] === "object" && target[name] !== null) {
@@ -31,12 +31,20 @@ function proxify(originalFn) {
 }
 
 const API_PROPS = [
-  'beforeCreate', 'created',
-  'beforeMounted' , 'mounted',
-  'beforeUpdate', 'updated',
-  'beforeDestroy',  'destroyed',
-  'data', 'methods', 'actions',
-  'watch', 'computed', 'template'
+  "beforeCreate",
+  "created",
+  "beforeMounted",
+  "mounted",
+  "beforeUpdate",
+  "updated",
+  "beforeDestroy",
+  "destroyed",
+  "data",
+  "methods",
+  "actions",
+  "watch",
+  "computed",
+  "template"
 ];
 
 export function wrap(input) {
@@ -65,7 +73,7 @@ export function wrap(input) {
       } else if (typeof input.data === "function") {
         this.dataKeys = input.data();
       }
-      Object.keys(this.actions).forEach((action)=>{
+      Object.keys(this.actions).forEach(action => {
         this[action] = this.actions[action].bind(this);
       });
       this.setProperties(this.dataKeys);
@@ -102,7 +110,10 @@ export function wrap(input) {
   Object.keys(input.watch).forEach(propName => {
     const originalObserver = input.watch[propName];
     // eslint-disable-next-line ember/no-observers
-    defaultData["_ob_" + propName] = observer(propName, proxify(originalObserver));
+    defaultData["_ob_" + propName] = observer(
+      propName,
+      proxify(originalObserver)
+    );
   });
   Object.keys(input.computed).forEach(propName => {
     const cp = input.computed[propName];
@@ -121,7 +132,7 @@ export function wrap(input) {
   });
 
   const fns = {};
-  Object.keys(input).forEach((key)=>{
+  Object.keys(input).forEach(key => {
     if (!API_PROPS.includes(key)) {
       fns[key] = input[key];
     }
