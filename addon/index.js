@@ -7,7 +7,7 @@ const handler = {
     if (name === "$content") {
       return target;
     }
-    if (name.startsWith("_")) {
+    if (name.startsWith("_") || target[name] instanceof HTMLElement) {
       return target[name];
     }
     if (typeof target[name] === "object" && target[name] !== null) {
@@ -73,7 +73,9 @@ export function wrap(input) {
       } else if (typeof input.data === "function") {
         this.dataKeys = input.data();
       }
+      // console.log('init');
       Object.keys(this.actions).forEach(action => {
+        delete this[action];
         this[action] = this.actions[action].bind(this);
       });
       this.setProperties(this.dataKeys);
@@ -137,6 +139,5 @@ export function wrap(input) {
       fns[key] = input[key];
     }
   });
-
   return Component.extend(defaultData, fns);
 }
