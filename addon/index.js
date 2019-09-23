@@ -1,26 +1,31 @@
 import { observer, set } from "@ember/object";
 import Component from "@ember/component";
 const noop = function() {};
-
+const proxyMap = new WeakMap();
 const handler = {
-  get(target, name) {
+  get(target, name, receiver) {
     if (name === "$content") {
       return target;
     }
-    if (name.startsWith("_") || target[name] instanceof HTMLElement) {
-      return target[name];
+    target = target["$content"] || target;
+    let maybeValue = Reflect.get(target, name, receiver);
+    if (name.startsWith("_") || maybeValue instanceof HTMLElement) {
+      return maybeValue;
     }
-    if (typeof target[name] === "object" && target[name] !== null) {
-      return new Proxy(target[name], handler);
+    if (typeof maybeValue === "object" && maybeValue !== null) {
+      if (!proxyMap.has(maybeValue)) {
+        proxyMap.set(maybeValue, new Proxy(maybeValue, handler));
+      }
+      return proxyMap.get(maybeValue);
     }
-    return target[name];
+    return maybeValue;
   },
   set(target, name, value) {
     set(target, name, value);
     return true;
   },
   has(target, name) {
-    return name in target;
+    return Reflect.has(target, name);
   }
 };
 
